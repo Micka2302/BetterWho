@@ -36,6 +36,19 @@ public class BetterWhoPlugin : BasePlugin
             return;
         }
 
+        if (command.ArgCount < 2)
+        {
+            command.ReplyToCommand("Usage: css_bwho <player name or SteamID>");
+            return;
+        }
+
+        var targetArg = command.GetArg(1)?.Trim();
+        if (string.IsNullOrWhiteSpace(targetArg))
+        {
+            command.ReplyToCommand("Usage: css_bwho <player name or SteamID>");
+            return;
+        }
+
         var players = Utilities.GetPlayers()
             .Where(player => player is { IsValid: true })
             .ToList();
@@ -46,40 +59,79 @@ public class BetterWhoPlugin : BasePlugin
             return;
         }
 
-        foreach (var player in players)
+        var matchingPlayers = players
+            .Where(player => PlayerMatchesArgument(player, targetArg))
+            .ToList();
+
+        if (matchingPlayers.Count == 0)
         {
-            var steamId = player.AuthorizedSteamID;
-            var steamId64 = steamId?.SteamId64 ?? 0;
-            var profileLink = steamId64 > 0
-                ? $"https://steamcommunity.com/profiles/{steamId64}"
-                : "N/A";
+            command.ReplyToCommand($"No players match '{targetArg}'.");
+            return;
+        }
 
-            var ipAddress = string.IsNullOrWhiteSpace(player.IpAddress) ? "N/A" : player.IpAddress;
+        if (matchingPlayers.Count > 1)
+        {
+            var playerNames = matchingPlayers
+                .Select(player => string.IsNullOrWhiteSpace(player.PlayerName) ? "Unknown" : player.PlayerName)
+                .ToList();
 
-            var permissions = GetPlayerPermissions(player);
-            var permissionText = permissions.Count > 0
-                ? string.Join(", ", permissions)
-                : "None";
+            command.ReplyToCommand($"Multiple players match '{targetArg}': {string.Join(", ", playerNames)}.");
+            return;
+        }
 
-            const string separatorColor = "\x07FFA500";
-            const string labelColor = "\x07ADD8E6";
-            const string valueColor = "\x07FFFFFF";
+        var targetPlayer = matchingPlayers[0];
+        var steamId = targetPlayer.AuthorizedSteamID;
+        var steamId64 = steamId?.SteamId64 ?? 0;
+        var profileLink = steamId64 > 0
+            ? $"https://steamcommunity.com/profiles/{steamId64}"
+            : "N/A";
 
-            var cardLines = new[]
+        var ipAddress = string.IsNullOrWhiteSpace(targetPlayer.IpAddress) ? "N/A" : targetPlayer.IpAddress;
+
+
+        var permissions = GetPlayerPermissions(targetPlayer);
+        var permissionText = permissions.Count > 0
+            ? string.Join(", ", permissions)
+            : "None";
+
+        var message =
+            $"{targetPlayer.PlayerName} | {profileLink} | {ipAddress} | {permissionText}";
+
+        command.ReplyToCommand(message);
+    }
+
+    private static bool PlayerMatchesArgument(CCSPlayerController player, string targetArg)
+    {
+        if (string.IsNullOrWhiteSpace(targetArg))
+        {
+            return false;
+
+        }
+
+        if (!string.IsNullOrWhiteSpace(player.PlayerName) &&
+            player.PlayerName.Contains(targetArg, System.StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        var steamId = player.AuthorizedSteamID;
+        if (steamId is not null)
+        {
+            if (steamId.SteamId64 > 0 &&
+                steamId.SteamId64.ToString().Equals(targetArg, System.StringComparison.OrdinalIgnoreCase))
             {
-                $"{separatorColor}**************",
-                $"{labelColor}* Pseudo : {valueColor}{player.PlayerName}",
-                $"{labelColor}* Profile : {valueColor}{profileLink}",
-                $"{labelColor}* IP : {valueColor}{ipAddress}",
-                $"{labelColor}* Permissions : {valueColor}{permissionText}",
-                $"{separatorColor}**************"
-            };
+                return true;
+            }
 
-            foreach (var line in cardLines)
+            var steamIdString = steamId.ToString();
+            if (!string.IsNullOrWhiteSpace(steamIdString) &&
+                steamIdString.Equals(targetArg, System.StringComparison.OrdinalIgnoreCase))
             {
-                command.ReplyToCommand(line);
+                return true;
             }
         }
+
+        return false;
     }
 
     private static List<string> GetPlayerPermissions(CCSPlayerController player)
