@@ -67,7 +67,9 @@ jobs:
           path: .
 
       - name: Zip release artifact
-        run: zip -r "BetterWho-${{ github.event.release.tag_name }}.zip" addons/
+        run: |
+          cd BetterWho
+          zip -r "../BetterWho-${{ github.event.release.tag_name }}.zip" addons/
 
       - name: Get release upload URL
         id: release_info
