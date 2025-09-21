@@ -12,9 +12,9 @@ jobs:
     env:
       REPO_NAME: ${{ github.event.repository.name }}
       BUILD_OUTPUT: build_output
-      PACKAGE_ROOT: package
-      PLUGIN_ROOT: package/addons/counterstrikesharp/plugins
-      CONFIG_ROOT: package/addons/counterstrikesharp/configs/plugins
+      PACKAGE_ROOT: addons
+      PLUGIN_ROOT: addons/counterstrikesharp/plugins
+      CONFIG_ROOT: addons/counterstrikesharp/configs/plugins
       PACKAGE_ARCHIVE: ${{ github.event.repository.name }}.zip
     steps:
       - name: Check out repository
