@@ -1,0 +1,42 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release BetterWho.csproj
+
+      - name: Prepare artifacts
+        run: |
+          mkdir -p addons/counterstrikesharp/plugins/BetterWho
+          mkdir -p addons/counterstrikesharp/configs/plugins/BetterWho
+          cp bin/Release/net8.0/BetterWho.dll addons/counterstrikesharp/plugins/BetterWho/BetterWho.dll
+          if [ -f configs/BetterWho.json ]; then
+            cp configs/BetterWho.json addons/counterstrikesharp/configs/plugins/BetterWho/BetterWho.json
+          fi
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: BetterWho
+          path: addons/
