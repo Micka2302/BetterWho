@@ -94,10 +94,24 @@ public class BetterWhoPlugin : BasePlugin
             ? string.Join(", ", permissions)
             : "None";
 
-        var message =
-            $"{targetPlayer.PlayerName} | {profileLink} | {ipAddress} | {permissionText}";
+        var playerName = string.IsNullOrWhiteSpace(targetPlayer.PlayerName)
+            ? "Unknown"
+            : targetPlayer.PlayerName;
 
-        command.ReplyToCommand(message);
+        var cardLines = new[]
+        {
+            "**********************",
+            $"* Pseudo : {playerName}",
+            $"* Profile : {profileLink}",
+            $"* Ip : {ipAddress}",
+            $"* Permissions : {permissionText}",
+            "**********************"
+        };
+
+        foreach (var line in cardLines)
+        {
+            command.ReplyToCommand(line);
+        }
     }
 
     private static bool PlayerMatchesArgument(CCSPlayerController player, string targetArg)
