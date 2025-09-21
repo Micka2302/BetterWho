@@ -1,0 +1,87 @@
+name: Release Build
+
+on:
+  release:
+    types:
+      - created
+  workflow_dispatch:
+
+jobs:
+  build-and-package:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      REPO_NAME: ${{ github.event.repository.name }}
+      BUILD_OUTPUT: build_output
+      PACKAGE_ROOT: addons
+      PLUGIN_ROOT: addons/counterstrikesharp/plugins
+      CONFIG_ROOT: addons/counterstrikesharp/configs/plugins
+      PACKAGE_ARCHIVE: ${{ github.event.repository.name }}.zip
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore BetterWho.csproj
+
+      - name: Publish plugin
+        run: dotnet publish BetterWho.csproj -c Release -o ${{ env.BUILD_OUTPUT }}
+
+      - name: Prepare package directories
+        run: |
+          mkdir -p "${{ env.PLUGIN_ROOT }}/${{ env.REPO_NAME }}"
+          mkdir -p "${{ env.CONFIG_ROOT }}/${{ env.REPO_NAME }}"
+
+      - name: Copy plugin assembly
+        run: |
+          cp "${{ env.BUILD_OUTPUT }}/BetterWho.dll" "${{ env.PLUGIN_ROOT }}/${{ env.REPO_NAME }}/${{ env.REPO_NAME }}.dll"
+
+      - name: Copy configuration files
+        run: |
+          set -euo pipefail
+          dest="${{ env.CONFIG_ROOT }}/${{ env.REPO_NAME }}"
+          copied=false
+          for dir in configs config; do
+            if [ -d "$dir" ]; then
+              echo "Copying configuration from $dir to $dest"
+              rsync -a "$dir/" "$dest/"
+              copied=true
+            fi
+          done
+          if [ "$copied" = false ]; then
+            echo "No configuration directory found; skipping copy."
+          fi
+
+      - name: Create ZIP package
+        run: zip -r "${{ env.PACKAGE_ARCHIVE }}" "${{ env.PACKAGE_ROOT }}"
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ env.REPO_NAME }}-package
+          path: ${{ env.PACKAGE_ARCHIVE }}
+
+      - name: Upload release asset
+        if: github.event_name == 'release'
+        uses: softprops/action-gh-release@v1
+        with:
+          files: ${{ env.PACKAGE_ARCHIVE }}
+
+      - name: Document package layout
+        if: always()
+        run: |
+          {
+            echo "## Packaging overview"
+            echo "- Build output directory: \`${BUILD_OUTPUT}\` (contains published DLLs before packaging)"
+            echo "- Plugin destination: \`${PLUGIN_ROOT}/${REPO_NAME}\` (final DLL copied here as \`${REPO_NAME}.dll\`)"
+            echo "- Config destination: \`${CONFIG_ROOT}/${REPO_NAME}\` (any files from \`config/\` or \`configs/\` end up here)"
+            echo "- Release archive: \`${PACKAGE_ARCHIVE}\` (zip of the \`${PACKAGE_ROOT}\` folder)"
+            echo
+            echo "Update the paths above if the project layout or configuration folders change."
+          } >> "$GITHUB_STEP_SUMMARY"

@@ -1,0 +1,21 @@
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userprefs
+
+# Build outputs
+[Bb]uild/
+**/[Oo]bj/
+**/[Bb]in/
+
+# NuGet packages
+*.nupkg
+*.snupkg
+packages/
+.nuget/
+
+# Rider/IDEA
+.idea/
+*.sln.iml
