@@ -88,6 +88,7 @@ public class BetterWhoPlugin : BasePlugin
 
         var ipAddress = string.IsNullOrWhiteSpace(targetPlayer.IpAddress) ? "N/A" : targetPlayer.IpAddress;
 
+
         var permissions = GetPlayerPermissions(targetPlayer);
         var permissionText = permissions.Count > 0
             ? string.Join(", ", permissions)
@@ -104,6 +105,7 @@ public class BetterWhoPlugin : BasePlugin
         if (string.IsNullOrWhiteSpace(targetArg))
         {
             return false;
+
         }
 
         if (!string.IsNullOrWhiteSpace(player.PlayerName) &&
