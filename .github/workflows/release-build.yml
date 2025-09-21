@@ -70,7 +70,6 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: ${{ env.PACKAGE_ARCHIVE }}
-          overwrite: true
 
       - name: Document package layout
         if: always()
