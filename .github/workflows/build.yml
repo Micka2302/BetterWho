@@ -40,7 +40,7 @@ jobs:
           fi
 
       - name: Package addon
-        run: zip -r BetterWho.zip addons/
+        run: zip -r "BetterWho-${{ github.event.release.tag_name }}.zip" addons/
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
