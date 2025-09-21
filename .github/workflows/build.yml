@@ -9,6 +9,8 @@ on:
   pull_request:
     branches:
       - main
+  release:
+    types: [published]
 
 jobs:
   build:
@@ -51,3 +53,39 @@ jobs:
         uses: softprops/action-gh-release@v1
         with:
           files: BetterWho.zip
+
+  release:
+    needs: build
+    permissions: write-all
+    runs-on: ubuntu-latest
+    if: github.event_name == 'release'
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: BetterWho
+          path: .
+
+      - name: Zip release artifact
+        run: zip -r "BetterWho-${{ github.event.release.tag_name }}.zip" addons/
+
+      - name: Get release upload URL
+        id: release_info
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          upload_url=$(curl -sSL \
+            -H "Authorization: Bearer $GITHUB_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "${{ github.event.release.url }}" | jq -r '.upload_url' | sed 's/{?name,label}//')
+          echo "upload_url=$upload_url" >> "$GITHUB_OUTPUT"
+
+      - name: Upload release asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.release_info.outputs.upload_url }}
+          asset_path: BetterWho-${{ github.event.release.tag_name }}.zip
+          asset_name: cs2-betterwho-${{ github.event.release.tag_name }}.zip
+          asset_content_type: application/zip
