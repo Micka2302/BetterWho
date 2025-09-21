@@ -61,10 +61,24 @@ public class BetterWhoPlugin : BasePlugin
                 ? string.Join(", ", permissions)
                 : "None";
 
-            var message =
-                $"{player.PlayerName} | {profileLink} | {ipAddress} | {permissionText}";
+            const string separatorColor = "\x07FFA500";
+            const string labelColor = "\x07ADD8E6";
+            const string valueColor = "\x07FFFFFF";
 
-            command.ReplyToCommand(message);
+            var cardLines = new[]
+            {
+                $"{separatorColor}**************",
+                $"{labelColor}* Pseudo : {valueColor}{player.PlayerName}",
+                $"{labelColor}* Profile : {valueColor}{profileLink}",
+                $"{labelColor}* IP : {valueColor}{ipAddress}",
+                $"{labelColor}* Permissions : {valueColor}{permissionText}",
+                $"{separatorColor}**************"
+            };
+
+            foreach (var line in cardLines)
+            {
+                command.ReplyToCommand(line);
+            }
         }
     }
 
